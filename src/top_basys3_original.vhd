@@ -26,7 +26,7 @@ architecture top_basys3_arch of top_basys3 is
 
     -- signal declarations
     signal w_slow_clk : std_logic;
-    signal w_slow_clk1 : std_logic;
+    signal w_slow_clk_display : std_logic;
 
     
     
@@ -35,22 +35,19 @@ architecture top_basys3_arch of top_basys3 is
     signal w_elevator2 : std_logic_vector(3 downto 0);
     
     --TDM outputs
---    signal w_data : std_logic_vector(3 downto 0);
+    signal w_data : std_logic_vector(3 downto 0);
     signal w_sel : std_logic_vector(3 downto 0);
     
-    --what is this?
---    signal w_seg : std_logic_vector(6 downto 0);
+
     
     --reset signals
     signal reset_fsm : std_logic;
     signal reset_clk : std_logic;
     
     
-    --decoder outputs
-    signal w_seg0 : std_logic_vector(6 downto 0);
-    signal w_seg1 : std_logic_vector(6 downto 0);
-    signal w_seg2 : std_logic_vector(6 downto 0);
-    signal w_seg3 : std_logic_vector(6 downto 0);
+    --decoder output
+    --signal w_seg : std_logic_vector(6 downto 0);
+
     
 	-- component declarations
     component sevenseg_decoder is
@@ -71,7 +68,7 @@ architecture top_basys3_arch of top_basys3 is
 	end component elevator_controller_fsm;
 	
 	component TDM4 is
-		generic ( constant k_WIDTH : natural  := 7); -- bits in input and output
+		generic ( constant k_WIDTH : natural  := 4); -- bits in input and output
         Port ( i_clk		: in  STD_LOGIC;
            i_reset		: in  STD_LOGIC; -- asynchronous
            i_D3 		: in  STD_LOGIC_VECTOR (k_WIDTH - 1 downto 0);
@@ -111,7 +108,7 @@ begin
 	port map (
 	   i_clk => clk,
 	   i_reset => reset_clk,
-	   o_clk => w_slow_clk1
+	   o_clk => w_slow_clk_display
 	);
 	
     fsm1 : elevator_controller_fsm
@@ -134,41 +131,25 @@ begin
     
     tdm_inst : TDM4
     port map (
-        i_clk  => w_slow_clk1,        -- FAST clock
+        i_clk  => w_slow_clk_display,        -- FAST slow clock
         i_reset => btnU,
     
-        i_D0 => w_seg0,     -- rightmost display
-        i_D1 => w_seg1,         -- display 1 = F
-        i_D2 => w_seg2,     -- second from left
-        i_D3 => w_seg3,         -- leftmost = F
+        i_D0 => w_elevator1,     -- rightmost display
+        i_D1 => x"F",         -- display 1 = F
+        i_D2 => w_elevator2,     -- second from left
+        i_D3 => x"F",         -- leftmost = F
     
-        o_data => seg,
+        o_data => w_data,
         o_sel  => an
     );
     
-    decoder0 : sevenseg_decoder
+    decoder : sevenseg_decoder
     port map (
-        i_Hex  => w_elevator1,
-        o_seg_n => w_seg0
+        i_Hex  => w_data,
+        o_seg_n => seg
     );
     
-    decoder1 : sevenseg_decoder
-    port map (
-        i_Hex  => x"F",
-        o_seg_n => w_seg1
-    );
 
-    decoder2 : sevenseg_decoder
-    port map (
-        i_Hex  =>  w_elevator2,
-        o_seg_n => w_seg2
-    );
-    
-    decoder3 : sevenseg_decoder
-    port map (
-        i_Hex  => x"F",
-        o_seg_n => w_seg3
-    );
 	
 	-- CONCURRENT STATEMENTS ----------------------------
 --	seg <= w_seg;
